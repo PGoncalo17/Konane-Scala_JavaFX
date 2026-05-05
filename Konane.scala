@@ -14,7 +14,7 @@ def saveSeed(seed:Long):Unit = {
 }
 
 def loadSeed():Long = {
-    // Tryes to read de file. If doesn´t exists, chooses a random number that we chose(42) 
+    // Tries to read de file. If doesn´t exists, chooses a random number that we chose(42) 
     val source = Try(Source.fromFile("seed.txt"))
     val seed = source.map(_.getLines().next().trim.toLong).getOrElse(42L)
     source.foreach(_.close()) // Closes the file
