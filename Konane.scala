@@ -3,6 +3,23 @@ package Project
 import Project.Utils.*
 import Project.MyRandom
 import scala.annotation.tailrec
+import scala.util.Try
+import java.io.{PrintWriter, File}
+import scala.io.Source
+
+def saveSeed(seed:Long):Unit = {
+    val writer = new PrintWriter(new File("Seed.txt"))
+    writer.write(seed.toString())
+    writer.close
+}
+
+def loadSeed():Long = {
+    // Tryes to read de file. If doesn´t exists, chooses a random number that we chose(42) 
+    val source = Try(Source.fromFile("seed.txt"))
+    val seed = source.map(_.getLines().next().trim.toLong).getOrElse(42L)
+    source.foreach(_.close()) // Closes the file
+    seed
+}
 
 type Coord2D = (Int, Int)
 type Board = Map[Coord2D, Stone]
@@ -14,22 +31,27 @@ case class GameState(lines: Int, cols: Int, board: Board = Map(), lstOpenCoords:
 
 object Konane extends App {
 
-    val r = MyRandom(System.currentTimeMillis())                                                              // Random value to keep main loop going
- 
+    // Loads the seed from the file
+    val initialSeed = loadSeed()
+    val r = MyRandom(initialSeed)
+
     mainLoop(GameState(0, 0), r)                                                                              // Responsible for keeping the game going
 
     // Main Loop 
     @tailrec
     def mainLoop(gameState: GameState, r: RandomWithState): Unit = {
         showInitialPrompt()                                                                                   // Creates prompt asking dimension, start or quit to the user
+
+        // Everytime the loop starts, saves the seed
+        saveSeed(r.seed)
         val userInput = getUserInput()                                                                        // Reads the input from user
 
         userInput match {
             case "D" | "d" =>                                                                                 // User is choosing dimension
                 println("Lines: ")                                                                            // Asks user to choose number of lines
-                val l = scala.io.StdIn.readInt()                                                              // Stores variable with the desired amount of lines
+                val l = Try(scala.io.StdIn.readLine().toInt).getOrElse(-1)                                                              // Stores variable with the desired amount of lines
                 println("Columns: ")                                                                          // Asks user to choose number of columns
-                val c = scala.io.StdIn.readInt()                                                              // Stores variable with the desired amount of columns
+                val c = Try(scala.io.StdIn.readLine().toInt).getOrElse(-1)                                                              // Stores variable with the desired amount of columns
                 
                 if ((l > 0 && c > 0 && (l % 2 != 0 && c % 2 != 0)) || (l <= 0 || c <= 0)) {                   // Rules of dimension       
                     println("Invalid dimension. Try again!")                                                  // If it doesn't follow the rules, it's invalid
@@ -69,8 +91,7 @@ object Konane extends App {
             val winner = if (player == Stone.Black) "White (CPU)" else "Black (You)"                          // Chooses the winner and stores it in a variable
             println(s"\nNo more moves for ${player}. $winner WINS!")                                          
             printGameOver()
-            mainLoop(GameState(lines, cols, board, lstOpenCoords), r)                                         // Restarts main loop
-            return                                                                                            // Stops the execution
+            mainLoop(GameState(lines, cols, board, lstOpenCoords), r)                                         // Restarts main loop                                                                                           // Stops the execution
         }
 
         if (player == Stone.Black) {                                                                          // If it's user's turn
@@ -177,9 +198,9 @@ object Konane extends App {
 
     // Create random move
     def randomMove(lstOpenCoords: List[Coord2D], rand: RandomWithState): (Coord2D, RandomWithState) = {
-       val (randPos, newRand) = rand.nextInt(lstOpenCoords.length)  // Choose random pos in lstOpenCoords
-       val chosenCoord = lstOpenCoords(randPos)                     // Gets the correspondent coord
-       (chosenCoord, newRand)
+        val (randPos, newRand) = rand.nextInt(lstOpenCoords.length)  // Choose random pos in lstOpenCoords
+        val chosenCoord = lstOpenCoords(randPos)                     // Gets the correspondent coord
+        (chosenCoord, newRand) 
     }
 
     // Make a play
@@ -215,70 +236,74 @@ object Konane extends App {
 
     def playRandomly(board: Board, r: RandomWithState, player: Stone, lstOpenCoords: List[Coord2D], f: (List[Coord2D], RandomWithState) => (Coord2D, RandomWithState)): (Option[Board], RandomWithState, List[Coord2D], Option[Coord2D]) = {   
         val validCoords = validTargets(board, lstOpenCoords, player)                                          // Gets possible coords to go to(Possible coordTo)
-        
-        validCoords match {
-            case Nil => (None, r, lstOpenCoords, None)                                                        // If there are no possible coords to go to, ends game
-            case _ =>                                                                                         // Chooses randomly a coordTo with the f function(Random)
-                val (chosenCoordTo, newR1) = f(validCoords, r)                                                // Finds a playable piece that can go to the coordTo
-                val playablePieces = validSources(board, chosenCoordTo, player, lstOpenCoords)                // Chooses randomly a coordFrom with the f function(Random)
-                val (chosenCoordFrom, newR2) = f(playablePieces, newR1)
-                
-                println(s"\nCPU (White) jumped from $chosenCoordFrom to $chosenCoordTo")
-                val (firstPlayBoard, firstLstOpenCoords) = play(board, player, chosenCoordFrom, chosenCoordTo, lstOpenCoords)   //Makes the play
 
-                @tailrec    //Aux function to playRandomly, handle multiple jumps to Random
-                def processMultiJumps(currentBoard: Board, currentPos: Coord2D, currentOpen: List[Coord2D], currentR: RandomWithState): (Board, List[Coord2D], RandomWithState, Coord2D) = {
-                    if (!canStillJump(currentBoard, player, currentPos, currentOpen)) {                                                     // If there are not more jumps available
-                        (currentBoard, currentOpen, currentR, currentPos)                                                                   // Returns noral game state
-                    } else {                                                                                                                // If there are more jumps to do
-                        val targets = findPossiblePlays(currentPos).filter { t =>                                                           // Filters where the piece can go to(checks if it´s a valid play)
-                            val mid = ((currentPos._1 + t._1) / 2, (currentPos._2 + t._2) / 2)
-                            validPlay(currentBoard, currentPos, t, mid, player, currentOpen)
-                        }
-                        
-                        val choices = currentPos :: targets                                                                                 // Adds currentPos to targets list because it can choose not to jump
-                        val (nextTarget, nextR) = f(choices, currentR)                                                                      // Chooses a random position to go to with the function f(Random)
-                        
-                        if (nextTarget == currentPos) {                                                                                     // If currentPos is the chosen target
-                            println(s"  -> CPU decided to stop jumping and stayed at $currentPos.")
-                            (currentBoard, currentOpen, nextR, currentPos)                                                                  // Returns the board the same as before(if decided not to jump, board stayed the same)
-                        } else {                                                                                                            // If any coordTo is chosen as a target
-                            val (newBoardOpt, nextLstOpenCoords) = play(currentBoard, player, currentPos, nextTarget, currentOpen)          // Does a play
+        if (validCoords.isEmpty){
+            (None, r, lstOpenCoords, None)
+        } else{
+            validCoords match {
+                case Nil => (None, r, lstOpenCoords, None)                                                        // If there are no possible coords to go to, ends game
+                case _ =>                                                                                         // Chooses randomly a coordTo with the f function(Random)
+                    val (chosenCoordTo, newR1) = f(validCoords, r)                                                // Finds a playable piece that can go to the coordTo
+                    val playablePieces = validSources(board, chosenCoordTo, player, lstOpenCoords)                // Chooses randomly a coordFrom with the f function(Random)
+                    val (chosenCoordFrom, newR2) = f(playablePieces, newR1)
+                    
+                    println(s"\nCPU (White) jumped from $chosenCoordFrom to $chosenCoordTo")
+                    val (firstPlayBoard, firstLstOpenCoords) = play(board, player, chosenCoordFrom, chosenCoordTo, lstOpenCoords)   //Makes the play
+
+                    @tailrec    //Aux function to playRandomly, handle multiple jumps to Random
+                    def processMultiJumps(currentBoard: Board, currentPos: Coord2D, currentOpen: List[Coord2D], currentR: RandomWithState): (Board, List[Coord2D], RandomWithState, Coord2D) = {
+                        if (!canStillJump(currentBoard, player, currentPos, currentOpen)) {                                                     // If there are not more jumps available
+                            (currentBoard, currentOpen, currentR, currentPos)                                                                   // Returns noral game state
+                        } else {                                                                                                                // If there are more jumps to do
+                            val targets = findPossiblePlays(currentPos).filter { t =>                                                           // Filters where the piece can go to(checks if it´s a valid play)
+                                val mid = ((currentPos._1 + t._1) / 2, (currentPos._2 + t._2) / 2)
+                                validPlay(currentBoard, currentPos, t, mid, player, currentOpen)
+                            }
                             
-                            newBoardOpt match {
-                                case None => (currentBoard, currentOpen, nextR, currentPos)                                                 // If didn't jump again, game state stays the same
-                                case Some(newBoard) =>                                                                                      // If decided to jump
-                                    println(s"  -> CPU continued jumping: from $currentPos to $nextTarget!")
-                                    processMultiJumps(newBoard, nextTarget, nextLstOpenCoords, nextR)                                       // Checks if can jump again(recursively)
+                            val choices = currentPos :: targets                                                                                 // Adds currentPos to targets list because it can choose not to jump
+                            val (nextTarget, nextR) = f(choices, currentR)                                                                      // Chooses a random position to go to with the function f(Random)
+                            
+                            if (nextTarget == currentPos) {                                                                                     // If currentPos is the chosen target
+                                println(s"  -> CPU decided to stop jumping and stayed at $currentPos.")
+                                (currentBoard, currentOpen, nextR, currentPos)                                                                  // Returns the board the same as before(if decided not to jump, board stayed the same)
+                            } else {                                                                                                            // If any coordTo is chosen as a target
+                                val (newBoardOpt, nextLstOpenCoords) = play(currentBoard, player, currentPos, nextTarget, currentOpen)          // Does a play
                                 
+                                newBoardOpt match {
+                                    case None => (currentBoard, currentOpen, nextR, currentPos)                                                 // If didn't jump again, game state stays the same
+                                    case Some(newBoard) =>                                                                                      // If decided to jump
+                                        println(s"  -> CPU continued jumping: from $currentPos to $nextTarget!")
+                                        processMultiJumps(newBoard, nextTarget, nextLstOpenCoords, nextR)                                       // Checks if can jump again(recursively)
+                                    
+                                }
                             }
                         }
                     }
-                }
 
-                firstPlayBoard match {
-                    case Some(b) =>                                                                                                             // If does one more jump
-                        val (finalBoard, finalOpenCoords, finalR, finalPos) = processMultiJumps(b, chosenCoordTo, firstLstOpenCoords, newR2)    // Tries to jump again
-                        (Some(finalBoard), finalR, finalOpenCoords, Some(finalPos))
-                    case None =>                                                                                                                // Case there no more jumps to do
-                        (None, newR2, lstOpenCoords, None)
-                }
+                    firstPlayBoard match {
+                        case Some(b) =>                                                                                                             // If does one more jump
+                            val (finalBoard, finalOpenCoords, finalR, finalPos) = processMultiJumps(b, chosenCoordTo, firstLstOpenCoords, newR2)    // Tries to jump again
+                            (Some(finalBoard), finalR, finalOpenCoords, Some(finalPos))
+                        case None =>                                                                                                                // Case there no more jumps to do
+                            (None, newR2, lstOpenCoords, None)
+                    }
+            }
         }        
-    }
+    }  
     
-    def findPossiblePlays(coord: Coord2D): List[Coord2D] = {                                   // Aux to playRandomly, returns all the coords that can go to a coord
+    def findPossiblePlays(coord: Coord2D): List[Coord2D] = {                                   // Aux to playRandomly and validSources, returns all the coords that can go to a coord
         val (line, col) = coord                                                                // Final coord position
         List((line - 2, col), (line + 2, col), (line, col - 2), (line, col + 2))               // All the possible positions (left, right, above, below)
     }
 
-    def validSources(board: Board, coordTo: Coord2D, player: Stone, lstOpenCoords: List[Coord2D]): List[Coord2D] = {    // Aux to PlayRandomly, filter all valid coordFrom that can go to coordTo(empty space)
+    def validSources(board: Board, coordTo: Coord2D, player: Stone, lstOpenCoords: List[Coord2D]): List[Coord2D] = {    // Aux to PlayRandomly and validTargets(), filter all valid coordFrom that can go to coordTo(empty space)
         findPossiblePlays(coordTo).filter { coordFrom =>                                                                
             val coordMiddle = ((coordFrom._1 + coordTo._1)/2, (coordFrom._2 + coordTo._2)/2)                            // Chooses middle position  
             validPlay(board, coordFrom, coordTo, coordMiddle, player, lstOpenCoords)                                    // Checks if it's a valid play
         }
     }
 
-    def validTargets(board: Board, lstOpenCoords: List[Coord2D], player: Stone): List[Coord2D] = {                      // Aux to PlayRandomly, filters the list keeping just the coordTo that can be played to
+    def validTargets(board: Board, lstOpenCoords: List[Coord2D], player: Stone): List[Coord2D] = {                      // Aux to PlayRandomly and gameLoop, filters the list keeping just the coordTo that can be played to
         @tailrec
         def aux(remaining: List[Coord2D], acc: List[Coord2D]): List[Coord2D] = remaining match {                        
             case Nil => acc.reverse                                                                                     // If there are no more valid targets, reverse the list we have
