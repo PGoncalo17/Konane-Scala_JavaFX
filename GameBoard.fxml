@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane prefHeight="1080.0" prefWidth="1920.0" style="-fx-background-color: #3e2723;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Project.GameController">
+   <children>
+      <VBox alignment="CENTER" spacing="15.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+         <children>
+            
+            <Label fx:id="TurnLabel" alignment="CENTER" text="KONANE: Black's Turn" textFill="#d7ccc8">
+               <font>
+                  <Font name="Serif Bold" size="36.0" />
+               </font>
+            </Label>
+
+            <HBox alignment="CENTER" maxWidth="300.0" style="-fx-background-color: #2b1b17; -fx-background-radius: 20; -fx-padding: 10; -fx-border-color: #d7ccc8; -fx-border-radius: 20; -fx-border-width: 2;">
+               <children>
+                  <Label fx:id="TimerDisplay" text="Time: --.-s" textFill="#ffeb3b">
+                     <font>
+                        <Font name="Monospaced Bold" size="24.0" />
+                     </font>
+                  </Label>
+               </children>
+            </HBox>
+
+            <StackPane VBox.vgrow="ALWAYS">
+               <children>
+                  <GridPane fx:id="BoardGrid" alignment="CENTER" hgap="4.0" maxHeight="550.0" maxWidth="800.0" style="-fx-background-color: #5d4037; -fx-padding: 10; -fx-background-radius: 10;" vgap="4.0">
+                  </GridPane>
+               </children>
+            </StackPane>
+
+            <VBox fx:id="MultiJumpBox" alignment="CENTER" spacing="10.0" visible="false">
+               <children>
+                  <Label fx:id="MultiJumpLabel" text="Do you want to jump again?" textFill="#ffeb3b">
+                     <font><Font name="System Bold" size="18.0" /></font>
+                  </Label>
+                  <HBox alignment="CENTER" spacing="20.0">
+                     <children>
+                        <Button fx:id="BtnYes" onAction="#onActionYes" prefHeight="40.0" prefWidth="120.0" style="-fx-background-color: #4caf50; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 10; -fx-font-weight: bold;" text="YES" />
+                        <Button fx:id="BtnNo" onAction="#onActionNo" prefHeight="40.0" prefWidth="120.0" style="-fx-background-color: #f44336; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 10; -fx-font-weight: bold;" text="NO" />
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+
+            <HBox alignment="CENTER" spacing="30.0">
+               <children>
+                  <Button fx:id="BtnUndo" onAction="#onUndo" prefHeight="50.0" prefWidth="150.0" style="-fx-background-color: #fbc02d; -fx-cursor: hand; -fx-background-radius: 15; -fx-border-color: #f57f17; -fx-border-radius: 15;" text="UNDO">
+                     <font><Font name="System Bold" size="16.0" /></font>
+                  </Button>
+                  
+                  <Button fx:id="BtnReset" onAction="#onReset" prefHeight="50.0" prefWidth="150.0" style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 15; -fx-border-color: #0d47a1; -fx-border-radius: 15;" text="RESTART">
+                     <font><Font name="System Bold" size="16.0" /></font>
+                  </Button>
+                  
+                  <Button fx:id="BtnQuit" onAction="#onQuitGame" prefHeight="50.0" prefWidth="150.0" style="-fx-background-color: #c62828; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 15; -fx-border-color: #8e0000; -fx-border-radius: 15;" text="QUIT">
+                     <font><Font name="System Bold" size="16.0" /></font>
+                  </Button>
+               </children>
+               <VBox.margin>
+                  <Insets bottom="10.0" top="10.0" />
+               </VBox.margin>
+            </HBox>
+            
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>

@@ -1,0 +1,6 @@
+6,6
+Black,185412849336032,0
+false,false,None
+41189
+0 2 Black;5 3 Black;1 3 Black;5 5 Black;3 5 Black;2 3 White;5 1 Black;4 3 White;5 0 White;3 3 Black;4 0 Black;3 1 Black;1 0 White;1 5 Black;3 2 White;2 4 Black;0 5 White;3 0 White;0 4 Black;5 2 White;4 5 White;1 4 White;4 1 White;4 4 Black;4 2 Black;2 5 White;2 1 White;3 4 White;5 4 White;2 2 Black
+1 2;1 1;0 0;0 1;0 3;2 0
