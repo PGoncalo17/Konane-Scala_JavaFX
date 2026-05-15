@@ -323,20 +323,20 @@ class GameController {
         selectedDifficulty = difficulty
     }
 
-    // aux function to list all movements (from -> to)
+    // aux function to list all movements a player can make (from -> to)
     private def getAllPossibleMoves(board: Board, lstOpenCoords: List[Coord2D], player: Stone): List[(Coord2D, Coord2D)] = {
         val targets = Konane.validTargets(board, lstOpenCoords, player)                                                                 // Gets all targets
 
-        def collectMoves(remainingTargets: List[Coord2D], acc: List[(Coord2D, Coord2D)]): List[(Coord2D, Coord2D)] = {                  // Aux function to 
-            remainingTargets match {
-                case Nil => acc
-                case to :: tail =>
-                    val sources = Konane.validSources(board, to, player, lstOpenCoords)
-                    val movesFromThisTarget = sources.map(from => (from, to))
-                    collectMoves(tail, acc ++ movesFromThisTarget)
+        def collectMoves(remainingTargets: List[Coord2D], acc: List[(Coord2D, Coord2D)]): List[(Coord2D, Coord2D)] = {                  // Aux function to run targets list (acc to get positions coordFrom -> coordTo)
+            remainingTargets match {                                                                                                    // To remaining targets (targtes that are left to pbe processed)
+                case Nil => acc                                                                                                         // Case there re no more targets, returns acc list
+                case to :: tail =>                                                                                                      // Case there are more targets
+                    val sources = Konane.validSources(board, to, player, lstOpenCoords)                                                 // Gets valid sources
+                    val movesFromThisTarget = sources.map(from => (from, to))                                                           // For each coordFrom creates a pair with coordTo
+                    collectMoves(tail, movesFromThisTarget ::: acc)                                                                     // Recursive
             }
         }
-        collectMoves(targets, Nil)
+        collectMoves(targets, Nil)                                                                                                      // Recursive
     }
 
     // Medium Difficulty
