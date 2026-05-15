@@ -34,6 +34,12 @@ class InitialMenu {
   private var OkDimensionButtonID: Button = uninitialized
 
   @FXML
+  private var DimensionsVBoxID: javafx.scene.layout.VBox = uninitialized
+
+  @FXML
+  private var TimeVBoxID: javafx.scene.layout.VBox = uninitialized
+
+  @FXML
   private var TimerButtonID: Button = uninitialized
 
   @FXML
@@ -57,6 +63,23 @@ class InitialMenu {
   @FXML 
   private var StartNewGameId: javafx.scene.layout.VBox = uninitialized
 
+  @FXML
+  private var BtnEasy: Button = uninitialized  
+  
+  @FXML
+  private var BtnMedium: Button = uninitialized  
+  
+  @FXML
+  private var BtnHard: Button = uninitialized
+
+  @FXML
+  private var DifficultyID: Button = uninitialized
+
+  @FXML
+  private var DifficultySelectionBox: javafx.scene.layout.VBox = uninitialized
+
+
+
 
 
   // Variables to save the dimensions
@@ -76,18 +99,12 @@ class InitialMenu {
   
   @FXML
   def OnDimensionClicked(): Unit = {
-    LinesID1.setVisible(true)
-    LinesID2.setVisible(true)
-    ColsID1.setVisible(true)
-    ColsID2.setVisible(true)
-    OkDimensionButtonID.setVisible(true)
+    DimensionsVBoxID.setVisible(!DimensionsVBoxID.isVisible());
   }
 
   @FXML
   def OnTimerClicked(): Unit = {
-    TimerLabel.setVisible(true)
-    TimerField.setVisible(true)
-    OkTimerButtonID.setVisible(true)
+    TimeVBoxID.setVisible(!TimeVBoxID.isVisible());
   }
 
   @FXML
@@ -98,9 +115,7 @@ class InitialMenu {
         showError("Timer must be at least 5 seconds!")
       } else{
         chosenTimer = Some(t)
-        TimerLabel.setVisible(false)
-        TimerField.setVisible(false)
-        OkTimerButtonID.setVisible(false)
+        TimeVBoxID.setVisible(false)
       }
     } catch {
         case _: NumberFormatException => showError("Invalid Timer Value!")
@@ -159,22 +174,39 @@ class InitialMenu {
         val l = LinesID2.getText.toInt                                                                 // Saves dimensions from user input 
         val c = ColsID2.getText.toInt
 
-         if ((l > 0 && c > 0 && (l % 2 != 0 && c % 2 != 0)) || (l <= 0 || c <= 0)) {                   // Rules of dimension       
+         if ((l > 0 && c > 0 && (l % 2 != 0 && c % 2 != 0)) || (l <= 3 || c <= 3)) {                   // Rules of dimension       
                     showError("Invalid Dimensions. Try again!")                                        // If it doesn't follow the rules, it's invalid                                                                  // Restarts the main loop
                 } else {  
                     chosenLines = l
                     chosenCols = c     
 
-                    LinesID1.setVisible(false)
-                    LinesID2.setVisible(false)
-                    ColsID1.setVisible(false)
-                    ColsID2.setVisible(false)
-                    OkDimensionButtonID.setVisible(false)                                                                                                     
+                    DimensionsVBoxID.setVisible(false)                                                                                                    
                 }
     } catch {
         case _: NumberFormatException =>
             showError("Invalid Dimensions.")
     }
+  }
+
+
+  @FXML
+  def onDifficultyClicked(): Unit = {
+    DifficultySelectionBox.setVisible(!DifficultySelectionBox.isVisible());
+  }  
+
+  @FXML
+  def OnEasyClicked(): Unit = {
+    DifficultySelectionBox.setVisible(false)
+  }  
+  
+  @FXML
+  def OnMediumClicked(): Unit = {
+    DifficultySelectionBox.setVisible(false)
+  }  
+  
+  @FXML
+  def OnHardClicked(): Unit = {
+    DifficultySelectionBox.setVisible(false)
   }
 
   private def showError(msg: String): Unit = {            // Private functions to show errors
