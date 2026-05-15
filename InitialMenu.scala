@@ -87,6 +87,8 @@ class InitialMenu {
   var chosenCols: Int = 0
   // Variable to save the chosen time, if player doesn't choose the game starts with infinite time
   var chosenTimer: Option[Int] = None
+  // Variable to difficulty
+  var chosenDifficulty: String = "Easy"
 
 
   def initialize(): Unit = {                  // Need initialize() because only shows if saveGame.txt exists
@@ -135,7 +137,8 @@ class InitialMenu {
           val root: javafx.scene.Parent = loader.load() 
 
           val controller = loader.getController[GameController]()
-          controller.initializeGame(chosenLines, chosenCols, chosenTimer)
+          controller.setDifficulty(chosenDifficulty)                                      // Sets difficulty
+          controller.initializeGame(chosenLines, chosenCols, chosenTimer)                 // Starts game
 
           val stage = StartGameID.getScene.getWindow.asInstanceOf[javafx.stage.Stage]
           stage.getScene.setRoot(root)
@@ -196,16 +199,19 @@ class InitialMenu {
 
   @FXML
   def OnEasyClicked(): Unit = {
+    chosenDifficulty = "Easy"
     DifficultySelectionBox.setVisible(false)
   }  
   
   @FXML
   def OnMediumClicked(): Unit = {
+    chosenDifficulty = "Medium"
     DifficultySelectionBox.setVisible(false)
   }  
   
   @FXML
   def OnHardClicked(): Unit = {
+    chosenDifficulty = "hard"
     DifficultySelectionBox.setVisible(false)
   }
 

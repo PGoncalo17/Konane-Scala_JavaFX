@@ -61,6 +61,7 @@ class GameController {
     private var timeLimitMillis: Option[Long] = None                                               // Time variable
     private var turnStartTime: Long = 0                                                            // Start turn time
     private var timeRunning: Boolean = false                                                       // Time variable to choose between limited and infinite time mode
+    private var selectedDifficulty: String = "Easy"                                                // var to see difficulty selected
 
     def initializeGame(lines: Int, cols: Int, timerSeconds: Option[Int]): Unit = {
         gameLines = lines
@@ -282,7 +283,12 @@ class GameController {
     }
 
     def handleCPUMove(): Unit = {
-        val (resultBoard, nextR, nextGaps, _) = Konane.playRandomly(currentBoard, currentRandom, Stone.White, lstOpenCoords, Konane.randomMove)         // Calls playRandomly: (board, r, player, gaps, f)
+        val (resultBoard, nextR, nextGaps, _) = selectedDifficulty match {                                                    // See which matches the selected difficulty
+            case "Medium" => getMediumMove()                                                                                  // Calls getMediumMove() if difficulty is medium
+            case "Hard" => getHardMove()                                                                                      // Calls getHardMove() if difficulty is hard
+            case _ => Konane.playRandomly(currentBoard, currentRandom, Stone.White, lstOpenCoords, Konane.randomMove)         // Calls playRandomly: (board, r, player, gaps, f)
+        } 
+            
         currentRandom = nextR                                                                                                                           // Saves new state for next play
         Konane.saveSeed(nextR.seed)
         
@@ -311,6 +317,55 @@ class GameController {
                 TimerDisplay.setText("Good Game!")
                 deleteSave()                                                                                                    // Deletes saveGame.txt
         }
+    }
+
+    def setDifficulty(difficulty: String): Unit = {                                                                             // Function that gives chosen difficulty
+        selectedDifficulty = difficulty
+    }
+
+    // aux function to list all movements (from -> to)
+    private def getAllPossibleMoves(board: Board, lstOpenCoords: List[Coord2D], player: Stone): List[(Coord2D, Coord2D)] = {
+        val targets = Konane.validTargets(board, lstOpenCoords, player)                                                                 // Gets all targets
+
+        def collectMoves(remainingTargets: List[Coord2D], acc: List[(Coord2D, Coord2D)]): List[(Coord2D, Coord2D)] = {                  // Aux function to 
+            remainingTargets match {
+                case Nil => acc
+                case to :: tail =>
+                    val sources = Konane.validSources(board, to, player, lstOpenCoords)
+                    val movesFromThisTarget = sources.map(from => (from, to))
+                    collectMoves(tail, acc ++ movesFromThisTarget)
+            }
+        }
+        collectMoves(targets, Nil)
+    }
+
+    // Medium Difficulty
+    private def getMediumMove(): (Option[Board], RandomWithState, List[Coord2D], Option[Coord2D]) = {
+        val moves = getAllPossibleMoves(currentBoard, lstOpenCoords, Stone.White)                                               // Gets all the possible moves
+        if (moves.isEmpty) return (None, currentRandom, lstOpenCoords, None)                                                    // If there are no moves to do, returns None
+
+        val bestMove = moves.find { case (coordFrom, coordTo) =>                                                                // Chooses best move
+            val (simBoard, simLstOpenCoords) = Konane.play(currentBoard, Stone.White, coordFrom, coordTo, lstOpenCoords)         // Gets all possible plays
+            simBoard.exists(b => Konane.canStillJump(b, Stone.White, coordTo, simLstOpenCoords))                                // Gets the plays that still has jumps after
+        }.getOrElse(moves.head)                                                                                                 // If they are all the same, chooses first
+
+        val (newBoard, newLstOpenCoords) = Konane.play(currentBoard, Stone.White, bestMove._1, bestMove._2, lstOpenCoords)      // Makes the best play
+        (newBoard, currentRandom, newLstOpenCoords, Some(bestMove._2))                                                          // Returns new board
+    }
+
+    // Difficult mode
+    private def getHardMove(): (Option[Board], RandomWithState, List[Coord2D], Option[Coord2D]) = {
+        val moves = getAllPossibleMoves(currentBoard, lstOpenCoords, Stone.White)                                               // Gets all the possible moves
+        if(moves.isEmpty) return (None, currentRandom, lstOpenCoords, None)                                                      // If there are no moves to do, returns None
+
+        val bestMove = moves.minBy { case (coordFrom, coordTo) =>                                                               // Chooses the play where user gets the least valid targets
+            val (simBoard, simLstOpenCoords) = Konane.play(currentBoard, Stone.White, coordFrom, coordTo, lstOpenCoords)        // Gets all possible plays
+            simBoard.map(b => Konane.validTargets(b, simLstOpenCoords, Stone.Black).size).getOrElse(999)                        // Gets the play that has the least amount of valid targets
+        }
+
+        val (newBoard, newLstOpenCoords) = Konane.play(currentBoard, Stone.White, bestMove._1, bestMove._2, lstOpenCoords)     // Makes the best play
+        (newBoard, currentRandom, newLstOpenCoords, Some(bestMove._2))                                                            // Returns new board
+
     }
 
     @FXML
@@ -376,7 +431,7 @@ class GameController {
     def saveGameState(): Unit = {
         val writer = new PrintWriter(new File("saveGame.txt"))                                                  // Writes in the file saveGame.txt
         writer.println(s"$gameLines,$gameCols")                                                                 // Saves the dimensions
-        writer.println(s"$currentTurn,${currentRandom.seed},$jumpCount")                                        // Saves turn, seed and jump count
+        writer.println(s"$currentTurn,${currentRandom.seed},$selectedDifficulty,$jumpCount")                    // Saves turn, seed, jump count and selected difficulty
 
         val selCoordStr = selectedCoord.map(c => s"${c._1} ${c._2}").getOrElse("None")                          // Gets the selected coord if it exists
         writer.println(s"$isMultiJump,$lockedToPiece,$selCoordStr")                                             // Saves MultiJump, locked piece and selected coord
@@ -421,7 +476,8 @@ class GameController {
             val meta = lines(1).split(",")
             currentTurn = if (meta(0).trim == "Black") Stone.Black else Stone.White                             // Gets player's turn
             currentRandom = MyRandom(meta(1).trim.toLong)                                                       // Gets seed
-            jumpCount = if (meta.length > 2) meta(2).trim.toInt else 0                                          // Gets jumpCount, if it doesn't exist is 0
+            selectedDifficulty = meta(2).trim                                                                   // Gets selected difficulty
+            jumpCount = if (meta.length > 3) meta(3).trim.toInt else 0                                          // Gets jumpCount, if it doesn't exist is 0
 
             val multi = lines(2).split(",")
             isMultiJump = multi(0).toBoolean                                                                    // Gets multiJump
