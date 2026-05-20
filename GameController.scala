@@ -339,7 +339,7 @@ class GameController {
         collectMoves(targets, Nil)                                                                                                      // Recursive
     }
 
-    // Medium Difficulty
+    // Medium mode
     private def getMediumMove(): (Option[Board], RandomWithState, List[Coord2D], Option[Coord2D]) = {
         val moves = getAllPossibleMoves(currentBoard, lstOpenCoords, Stone.White)                                               // Gets all the possible moves
         if (moves.isEmpty) return (None, currentRandom, lstOpenCoords, None)                                                    // If there are no moves to do, returns None
@@ -353,18 +353,18 @@ class GameController {
         (newBoard, currentRandom, newLstOpenCoords, Some(bestMove._2))                                                          // Returns new board
     }
 
-    // Difficult mode
+    // Hard mode
     private def getHardMove(): (Option[Board], RandomWithState, List[Coord2D], Option[Coord2D]) = {
         val moves = getAllPossibleMoves(currentBoard, lstOpenCoords, Stone.White)                                               // Gets all the possible moves
-        if(moves.isEmpty) return (None, currentRandom, lstOpenCoords, None)                                                      // If there are no moves to do, returns None
+        if(moves.isEmpty) return (None, currentRandom, lstOpenCoords, None)                                                     // If there are no moves to do, returns None
 
         val bestMove = moves.minBy { case (coordFrom, coordTo) =>                                                               // Chooses the play where user gets the least valid targets
             val (simBoard, simLstOpenCoords) = Konane.play(currentBoard, Stone.White, coordFrom, coordTo, lstOpenCoords)        // Gets all possible plays
             simBoard.map(b => Konane.validTargets(b, simLstOpenCoords, Stone.Black).size).getOrElse(999)                        // Gets the play that has the least amount of valid targets
         }
 
-        val (newBoard, newLstOpenCoords) = Konane.play(currentBoard, Stone.White, bestMove._1, bestMove._2, lstOpenCoords)     // Makes the best play
-        (newBoard, currentRandom, newLstOpenCoords, Some(bestMove._2))                                                            // Returns new board
+        val (newBoard, newLstOpenCoords) = Konane.play(currentBoard, Stone.White, bestMove._1, bestMove._2, lstOpenCoords)      // Makes the best play
+        (newBoard, currentRandom, newLstOpenCoords, Some(bestMove._2))                                                          // Returns new board
 
     }
 
